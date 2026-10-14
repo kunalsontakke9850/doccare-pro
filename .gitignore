@@ -1,0 +1,34 @@
+# Local production settings and deployments
+/config.js
+**/config.js
+apps-script.gs
+APPSCRIPT_SETUP.md
+config/environments/*.local.json
+
+# Local tools and generated output
+node_modules/
+demo-dist/
+dist/
+*.log
+.DS_Store
+.env
+.env.*
+.claude/
+.playwright-cli/
+.superpowers/
+/docs/superpowers/
+/docs/
+/AGENTS.md
+
+# Desktop packages and local prototypes
+DocCarePro-Desktop/
+/admin.html
+/admin.js
+/admin.css
+/START.bat
+/app.bat
+/build-electron.bat
+
+# Local reference captures may contain clinic or patient information
+/doctor-reference-*.png
+/images/Varhad.png

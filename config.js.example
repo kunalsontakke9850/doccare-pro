@@ -1,0 +1,17 @@
+// Copy this file to config.js and set the endpoint for your own backend.
+var SCRIPT_URL = "https://script.google.com/macros/s/REPLACE_WITH_YOUR_DEPLOYMENT/exec";
+
+window.APP_CONFIG = {
+  ENVIRONMENT: "production",
+  SCRIPT_URL: SCRIPT_URL,
+  AUTO_REFRESH_MS: 600000,
+  CLINIC_NAME: "Your Clinic",
+  CLINIC_CONFIG: {
+    scanTypes: ["CBCT", "2D"],
+    twoDScanTypes: ["OPG"],
+    purposes: ["Assessment"],
+    radiologists: [{ name: "Radiologist", fee: 0, pricing: {} }]
+  },
+  CLINIC_REFERRING_DOCTORS: ["Doctor One"],
+  CLINIC_PRESET_PRICING: {}
+};

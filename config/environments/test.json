@@ -1,0 +1,6 @@
+{
+  "environment": "test",
+  "endpoint": "http://127.0.0.1:3051/test-api",
+  "transport": "fixture",
+  "notes": "Synthetic/local test backend only. Never replace this with a production Apps Script URL or secret."
+}

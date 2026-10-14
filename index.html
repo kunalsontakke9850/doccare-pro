@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DocCare Pro</title>
+  <meta name="description" content="A scan entry and billing workspace for imaging clinics." />
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="patient.css?v=19" />
+  <!-- Runtime config is generated for the hosted demo; local installs use config.js. -->
+  <script src="config.js?v=14"></script>
+</head>
+<body>
+  <main class="container">
+    <header class="page-header clinic-hero">
+      <div class="hero-image">
+        <div class="hero-copy">
+          <strong>DocCare Pro</strong>
+          <span>Scan entry · reports · billing</span>
+        </div>
+      </div>
+      <p id="demoNotice" class="demo-notice" hidden>Demo data stays in this browser. Use sample names only.</p>
+      <div class="hero-admin">
+        <button id="adminAccessBtn" type="button" class="btn-secondary">Admin Access</button>
+        <button id="adminQuickLogoutBtn" type="button" class="btn-secondary admin-quick-logout" style="display:none;">Exit Admin</button>
+        <span id="adminStatus" class="user-info"></span>
+      </div>
+    </header>
+
+    <!-- PAGE TABS -->
+    <div class="page-tabs">
+      <button class="page-tab active" data-page="scan" id="tabScan">Scan Entry Form</button>
+      <button class="page-tab" data-page="expenses" id="tabExpenses">Expenses</button>
+      <button class="page-tab" data-page="doctors" id="tabDoctors">Doctor Details</button>
+      <button class="page-tab" data-page="doctorReference" id="tabDoctorReference">Monthly Review</button>
+      <button class="page-tab" data-page="radiologists" id="tabRadiologists">Radiologist Details</button>
+      <button class="page-tab" data-page="bill" id="tabBill">Generate Bill</button>
+    </div>
+
+    <!-- SCAN ENTRY PAGE -->
+    <div class="page-content" id="scanPage">
+    <section class="card" aria-labelledby="formTitle" id="formSection">
+      <h2 id="formTitle">Scan Entry Form</h2>
+      <form id="scanForm" class="scan-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="entryDate">Date</label>
+            <input id="entryDate" name="date" type="date" required />
+          </div>
+
+          <div class="form-group">
+            <label for="patientName">Patient Name</label>
+            <input id="patientName" name="patientName" type="text" required />
+          </div>
+
+          <div class="form-group">
+            <label for="patientAge">Age</label>
+            <input id="patientAge" name="age" type="number" min="0" max="150" required />
+          </div>
+
+          <div class="form-group">
+            <label for="patientPhone">Phone Number</label>
+            <input id="patientPhone" name="patientPhone" type="tel" maxlength="10" placeholder="10-digit mobile number" />
+          </div>
+
+          <fieldset class="form-group scan-type-group">
+            <legend>3D Scan (CBCT)</legend>
+            <div class="scan-options" id="scanTypeOptions"></div>
+          </fieldset>
+
+          <fieldset class="form-group scan-type-group">
+            <legend>2D Scan</legend>
+            <div class="scan-options" id="twoDScanOptions"></div>
+          </fieldset>
+
+          <fieldset class="form-group scan-type-group">
+            <legend>PURPOSE OF CBCT</legend>
+            <div class="scan-options" id="purposeOptions"></div>
+          </fieldset>
+
+          <div class="form-group">
+            <label for="scanFees">Scan Fees</label>
+            <input id="scanFees" name="scanFees" type="number" min="0" step="1" required />
+          </div>
+
+          <div class="form-group">
+            <label for="radiologistName">Radiologist Name</label>
+            <select id="radiologistName" name="radiologistName" required>
+              <option value="" selected disabled>Select radiologist</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="radiologistFees">Radiologist Fees</label>
+            <input id="radiologistFees" name="radiologistFees" type="number" min="0" step="0.01" readonly required />
+          </div>
+
+          <div class="form-group" id="refDoctorGroup">
+            <label for="refDoctor">Referring Doctor</label>
+            <div class="ref-ac-wrap" id="refDoctorAutocompleteWrap">
+              <input
+                id="refDoctor"
+                name="refDoctor"
+                type="text"
+                placeholder="Type to search doctor name…"
+                autocomplete="off"
+                aria-haspopup="listbox"
+                aria-autocomplete="list"
+                aria-expanded="false"
+                required
+              />
+              <button type="button" class="ref-ac-clear-btn" id="refDoctorClear" aria-label="Clear doctor name" style="display:none;" tabindex="-1">&times;</button>
+              <button type="button" class="doc-ac-arrow-btn" id="refDoctorArrow" aria-label="Show all doctors" tabindex="-1">&#9660;</button>
+              <!-- Smart fuzzy-autocomplete dropdown — managed by initRefDoctorAutocomplete() in patient.js -->
+              <div class="ref-ac-dropdown" id="refDoctorDropdown" role="listbox" aria-label="Referring doctor suggestions"></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="consultationFees">Consultation Fees</label>
+            <input id="consultationFees" name="consultationFees" type="number" min="0" step="1" value="0" />
+          </div>
+
+          <div class="form-group">
+            <label for="totalFees">Total Fees</label>
+            <input id="totalFees" name="totalFees" type="number" readonly />
+          </div>
+
+          <fieldset class="form-group payment-method-group">
+            <legend>Payment Method</legend>
+            <div class="payment-method-options" role="radiogroup" aria-label="Payment method">
+              <label class="payment-method-option">
+                <input type="radio" name="paymentType" value="Cash" checked />
+                <span>Cash</span>
+              </label>
+              <label class="payment-method-option">
+                <input type="radio" name="paymentType" value="Online" />
+                <span>Online</span>
+              </label>
+              <label class="payment-method-option">
+                <input type="radio" name="paymentType" value="Split Payment" />
+                <span>Split Payment</span>
+              </label>
+            </div>
+            <div class="split-payment-fields" id="splitPaymentFields" hidden>
+              <div class="split-payment-amount">
+                <label for="cashAmount">Cash Amount</label>
+                <input id="cashAmount" name="cashAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+              </div>
+              <div class="split-payment-amount">
+                <label for="onlineAmount">Online Amount</label>
+                <input id="onlineAmount" name="onlineAmount" type="number" min="0" step="0.01" inputmode="decimal" placeholder="0.00" />
+              </div>
+            </div>
+            <p class="payment-method-help" id="paymentMethodHelp">Cash is selected by default.</p>
+          </fieldset>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary" id="submitBtn">Submit</button>
+          <button type="button" class="btn-secondary" id="clearBtn">Clear Form</button>
+        </div>
+      </form>
+      <p id="statusMsg" class="status-msg" aria-live="polite"></p>
+    </section>
+
+    <section class="card admin-workspace" id="adminPanel" style="display:none;" aria-labelledby="adminPanelTitle">
+      <header class="admin-workspace-header">
+        <div>
+          <p class="admin-eyebrow">Configuration workspace</p>
+          <h2 id="adminPanelTitle">Admin Settings</h2>
+          <p class="admin-workspace-description">Manage scan choices and radiologist pricing. Changes appear in the entry form after you save.</p>
+        </div>
+        <button type="button" id="adminLogoutBtn" class="btn-secondary admin-exit-btn">Exit Admin</button>
+      </header>
+
+      <div class="admin-settings-stack">
+        <section class="admin-settings-section" aria-labelledby="radiologistPricingTitle">
+          <div class="admin-section-heading">
+            <div>
+              <h3 id="radiologistPricingTitle">Radiologist Pricing</h3>
+              <p>Edit the radiologist name, default fee, and fee for every scan type.</p>
+            </div>
+            <span class="admin-count" id="radiologistCount"></span>
+          </div>
+          <div id="radiologistRows" class="admin-rows"></div>
+          <button type="button" id="addRadiologistBtn" class="btn-secondary admin-add-btn">+ Add Radiologist</button>
+        </section>
+
+        <div class="admin-option-sections">
+          <section class="admin-settings-section admin-option-section" aria-labelledby="scanTypeEditorTitle">
+            <div class="admin-section-heading">
+              <div>
+                <h3 id="scanTypeEditorTitle">3D Scan Types</h3>
+                <p>Edit each CBCT option in its own field.</p>
+              </div>
+              <span class="admin-count" id="adminScanTypeCount"></span>
+            </div>
+            <div id="adminScanTypeRows" class="admin-option-list" data-option-group="scanTypes"></div>
+            <button type="button" class="btn-secondary admin-add-btn" data-admin-option-add="scanTypes">+ Add Scan Type</button>
+          </section>
+
+          <section class="admin-settings-section admin-option-section" aria-labelledby="twoDScanTypeEditorTitle">
+            <div class="admin-section-heading">
+              <div>
+                <h3 id="twoDScanTypeEditorTitle">2D Scan Types</h3>
+                <p>Edit each 2D scan option separately.</p>
+              </div>
+              <span class="admin-count" id="adminTwoDScanTypeCount"></span>
+            </div>
+            <div id="adminTwoDScanTypeRows" class="admin-option-list" data-option-group="twoDScanTypes"></div>
+            <button type="button" class="btn-secondary admin-add-btn" data-admin-option-add="twoDScanTypes">+ Add 2D Scan Type</button>
+          </section>
+
+          <section class="admin-settings-section admin-option-section" aria-labelledby="purposeEditorTitle">
+            <div class="admin-section-heading">
+              <div>
+                <h3 id="purposeEditorTitle">Purpose of CBCT</h3>
+                <p>Edit every purpose as an individual option.</p>
+              </div>
+              <span class="admin-count" id="adminPurposeCount"></span>
+            </div>
+            <div id="adminPurposeRows" class="admin-option-list" data-option-group="purposes"></div>
+            <button type="button" class="btn-secondary admin-add-btn" data-admin-option-add="purposes">+ Add Purpose</button>
+          </section>
+        </div>
+
+        <section class="admin-settings-section admin-security-section" aria-labelledby="adminPasswordTitle">
+          <div class="admin-section-heading">
+            <div>
+              <h3 id="adminPasswordTitle">Change Admin Password</h3>
+              <p>Update the password used to open Admin Access on every clinic computer.</p>
+            </div>
+            <span class="admin-count admin-security-badge">Cloud synced</span>
+          </div>
+
+          <form id="adminPasswordChangeForm" class="admin-password-form" novalidate>
+            <div class="admin-password-fields">
+              <label class="admin-field-label" for="adminCurrentPassword">
+                <span>Current password</span>
+                <span class="admin-password-input-wrap">
+                  <input id="adminCurrentPassword" type="password" autocomplete="current-password" />
+                  <button type="button" class="admin-password-toggle" data-password-target="adminCurrentPassword" data-password-label="current password" aria-controls="adminCurrentPassword" aria-label="Show current password" aria-pressed="false">Show</button>
+                </span>
+              </label>
+
+              <label class="admin-field-label" for="adminNewPassword">
+                <span>New password</span>
+                <span class="admin-password-input-wrap">
+                  <input id="adminNewPassword" type="password" autocomplete="new-password" aria-describedby="adminPasswordRequirement" />
+                  <button type="button" class="admin-password-toggle" data-password-target="adminNewPassword" data-password-label="new password" aria-controls="adminNewPassword" aria-label="Show new password" aria-pressed="false">Show</button>
+                </span>
+                <small id="adminPasswordRequirement">Use at least 8 characters.</small>
+              </label>
+
+              <label class="admin-field-label" for="adminConfirmPassword">
+                <span>Confirm new password</span>
+                <span class="admin-password-input-wrap">
+                  <input id="adminConfirmPassword" type="password" autocomplete="new-password" />
+                  <button type="button" class="admin-password-toggle" data-password-target="adminConfirmPassword" data-password-label="confirmed password" aria-controls="adminConfirmPassword" aria-label="Show confirmed password" aria-pressed="false">Show</button>
+                </span>
+              </label>
+            </div>
+
+            <div class="admin-password-actions">
+              <p id="adminPasswordStatus" class="admin-password-status" aria-live="polite">Your password is never stored as readable text.</p>
+              <button type="submit" id="changeAdminPasswordBtn" class="btn-secondary admin-password-submit">Update Password</button>
+            </div>
+          </form>
+        </section>
+      </div>
+
+      <footer class="admin-save-bar">
+        <p id="adminSaveStatus" class="admin-save-status" aria-live="polite">Review the fields, then save your changes.</p>
+        <button type="button" id="saveAdminConfigBtn" class="btn-primary">Save Admin Changes</button>
+      </footer>
+    </section>
+    </div><!-- /scanPage -->
+
+    <!-- EXPENSES PAGE -->
+    <div class="page-content" id="expensePage" style="display:none;">
+    <section class="card" aria-labelledby="expenseTitle" id="expenseSection">
+      <h2 id="expenseTitle">Clinic Expenses</h2>
+      <form id="expenseForm" class="scan-form">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="expenseDate">Expense Date</label>
+            <input id="expenseDate" name="expenseDate" type="date" required />
+          </div>
+
+          <div class="form-group">
+            <label for="expenseType">Expense Type</label>
+            <select id="expenseType" name="expenseType" required>
+              <option value="" selected disabled>Select type</option>
+              <option value="Staff Salary">Staff Salary</option>
+              <option value="Equipment">Equipment</option>
+              <option value="Supplies">Supplies</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Utilities">Utilities (Electricity, Water)</option>
+              <option value="Rent">Rent</option>
+              <option value="Marketing">Marketing</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="expenseCategory">Category</label>
+            <input id="expenseCategory" name="expenseCategory" type="text" placeholder="e.g., Supplies, Maintenance, Equipment" required />
+          </div>
+
+          <div class="form-group">
+            <label for="expenseDescription">Description</label>
+            <input id="expenseDescription" name="expenseDescription" type="text" placeholder="e.g., Dental equipment maintenance" required />
+          </div>
+
+          <div class="form-group">
+            <label for="expenseAmount">Amount (₹)</label>
+            <input id="expenseAmount" name="expenseAmount" type="number" min="0" step="0.01" required />
+          </div>
+
+          <div class="form-group">
+            <label for="expensePaymentMethod">Payment Method</label>
+            <select id="expensePaymentMethod" name="expensePaymentMethod" required>
+              <option value="" selected disabled>Select method</option>
+              <option value="Cash">Cash</option>
+              <option value="Online">Online</option>
+              <option value="Cheque">Cheque</option>
+              <option value="Card">Card</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary" id="expenseSubmitBtn">Add Expense</button>
+          <button type="button" class="btn-secondary" id="expenseClearBtn">Clear Form</button>
+        </div>
+      </form>
+      <p id="expenseStatusMsg" class="status-msg" aria-live="polite"></p>
+    </section>
+
+    <section class="card" aria-labelledby="expenseTableTitle" id="expenseTableSection">
+      <div class="sheet-header">
+        <h2 id="expenseTableTitle">Expense Records</h2>
+        <button type="button" class="btn-secondary" id="expenseRefreshBtn">🔄 Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table id="expenseTable">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Type</th>
+              <th>Category</th>
+              <th>Description</th>
+              <th>Amount (₹)</th>
+              <th>Payment Method</th>
+              <th>Sync</th>
+            </tr>
+          </thead>
+          <tbody id="expenseTableBody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="4" style="text-align:right;font-weight:bold">Total Expenses:</td>
+              <td style="font-weight:bold" id="totalExpenses">₹0.00</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </section>
+    </div><!-- /expensePage -->
+
+    <!-- DOCTOR DETAILS PAGE -->
+    <div class="page-content" id="doctorsPage" style="display:none;">
+    <section class="card" id="doctorSelectionSection">
+      <h2>Doctor Details</h2>
+      <div class="doctor-filter-row">
+        <div class="form-group">
+          <label for="doctorSearchInput">Select Referring Doctor</label>
+          <div class="ref-ac-wrap doc-page-ac-wrap" id="doctorSearchWrap">
+            <input
+              type="text"
+              id="doctorSearchInput"
+              name="doctorSearchInput"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Type to search doctor name…"
+              aria-haspopup="listbox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+            />
+            <button type="button" class="ref-ac-clear-btn" id="doctorSearchClear" aria-label="Clear doctor name" style="display:none;" tabindex="-1">&times;</button>
+            <button type="button" class="doc-ac-arrow-btn" id="doctorSearchArrow" aria-label="Show all doctors" tabindex="-1">&#9660;</button>
+            <!-- Fuzzy-autocomplete dropdown - managed by initDoctorPageAutocomplete() in patient.js -->
+            <div class="ref-ac-dropdown" id="doctorSearchDropdown" role="listbox" aria-label="Doctor suggestions"></div>
+          </div>
+          <!-- Hidden value holder used by renderDoctorRecords() -->
+          <input type="hidden" id="doctorSelectInput" />
+        </div>
+        <div class="form-group">
+          <label for="doctorFromDate">From Date</label>
+          <input id="doctorFromDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label for="doctorToDate">To Date</label>
+          <input id="doctorToDate" type="date" />
+        </div>
+      </div>
+      <p id="doctorStatusMsg" class="status-msg" aria-live="polite"></p>
+    </section>
+
+    <!-- Summary table -->
+    <section class="card" id="doctorSummaryRow" style="display:none; padding: 0; overflow:visible;">
+      <div style="overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px;">
+      <table class="doc-summary-table">
+        <thead>
+          <tr>
+            <th>Patients</th>
+            <th>Scan Fees</th>
+            <th>Radiologist Fees</th>
+            <th>Grand Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="statPatients">0</td>
+            <td id="statScanFees">₹0</td>
+            <td id="statRadFees">₹0</td>
+            <td id="statTotal" class="stat-total-cell">₹0</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section class="card" id="doctorPatientsSection" style="display:none;">
+      <h2 id="doctorPatientsTitle">Patient Records</h2>
+      <div class="bill-list-table-wrap">
+        <table class="doctor-records-table" id="doctorPatientsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Patient Name</th>
+              <th>Age</th>
+              <th>Scan Type</th>
+              <th>2D Scan</th>
+              <th>Scan Fees</th>
+              <th>Radiologist Fees</th>
+              <th>Total Fees</th>
+            </tr>
+          </thead>
+          <tbody id="doctorPatientsBody"></tbody>
+        </table>
+      </div>
+    </section>
+    </div><!-- /doctorsPage -->
+
+    <!-- DOCTOR REFERENCE PAGE -->
+    <div class="page-content" id="doctorReferencePage" style="display:none;">
+    <div id="doctorReferenceAuthGate" class="doctor-reference-auth-gate" role="status" hidden>
+      <div class="doctor-reference-auth-icon" aria-hidden="true">🔒</div>
+      <h2>Authentication Required</h2>
+      <p>Enter the admin password to continue.</p>
+      <button id="doctorReferenceAuthGateBtn" type="button" class="btn-primary">Enter Password</button>
+    </div>
+    <section class="card" id="doctorReferenceSelectionSection">
+      <h2>Doctor Referral Summary</h2>
+      <p class="section-description">Review the references and amount generated by each referring doctor.</p>
+      <div class="doctor-filter-row">
+        <div class="form-group">
+          <label for="doctorReferenceFromDate">From Date</label>
+          <input id="doctorReferenceFromDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label for="doctorReferenceToDate">To Date</label>
+          <input id="doctorReferenceToDate" type="date" />
+        </div>
+      </div>
+      <div id="doctorReferenceSearchRow" class="doctor-reference-search-row" hidden>
+        <div class="form-group doctor-reference-search-group">
+          <label for="doctorReferenceSearchInput">Search Doctor</label>
+          <div class="doctor-reference-search-control">
+            <input
+              id="doctorReferenceSearchInput"
+              type="search"
+              placeholder="Search referring doctor"
+              autocomplete="off"
+            />
+            <button id="doctorReferenceSearchClear" type="button" class="doctor-reference-search-clear" aria-label="Clear doctor search" hidden>×</button>
+          </div>
+        </div>
+      </div>
+      <p id="doctorReferenceStatusMsg" class="status-msg" aria-live="polite"></p>
+    </section>
+
+    <section class="card monthly-collection-card" id="monthlyCollectionSection">
+      <div class="monthly-collection-header">
+        <div>
+          <h2>Monthly Collection</h2>
+          <p class="section-description">Patient collections by payment method, day, and running total.</p>
+        </div>
+        <div class="form-group monthly-collection-month-control">
+          <label for="monthlyCollectionMonth">Select Month</label>
+          <select id="monthlyCollectionMonth" aria-label="Select collection month"></select>
+        </div>
+      </div>
+      <div class="monthly-collection-summary" aria-live="polite">
+        <div class="monthly-collection-period">
+          <span class="monthly-collection-summary-label" id="monthlyCollectionPeriodLabel">Selected Month</span>
+          <strong id="monthlyCollectionPeriod">—</strong>
+          <span id="monthlyCollectionRange">—</span>
+        </div>
+        <div class="monthly-collection-total">
+          <span class="monthly-collection-summary-label" id="monthlyCollectionTotalLabel">Collection</span>
+          <strong id="monthlyCollectionTotal">₹0</strong>
+          <span id="monthlyCollectionRecordCount">0 records</span>
+        </div>
+        <div class="monthly-collection-stat">
+          <span class="monthly-collection-summary-label">Cash</span>
+          <strong id="monthlyCollectionCash">₹0</strong>
+        </div>
+        <div class="monthly-collection-stat">
+          <span class="monthly-collection-summary-label">Online</span>
+          <strong id="monthlyCollectionOnline">₹0</strong>
+        </div>
+        <div class="monthly-collection-stat monthly-collection-unclassified-stat">
+          <span class="monthly-collection-summary-label">Unclassified</span>
+          <strong id="monthlyCollectionUnclassified">₹0</strong>
+        </div>
+        <div class="monthly-collection-stat monthly-collection-consultation-stat">
+          <span class="monthly-collection-summary-label">Total Consultation Fees</span>
+          <strong id="monthlyCollectionConsultationFees">₹0</strong>
+          <span>Based on saved doctor percentages</span>
+        </div>
+      </div>
+      <details id="monthlyCollectionDetails" class="monthly-collection-details">
+        <summary>View daily collection</summary>
+        <div class="monthly-collection-table-wrap">
+          <table class="monthly-collection-table" id="monthlyCollectionTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Cash Collection</th>
+                <th>Online Collection</th>
+                <th>Unclassified</th>
+                <th>Total Collection</th>
+                <th>Cumulative Collection</th>
+              </tr>
+            </thead>
+            <tbody id="monthlyCollectionBody"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+
+    <section class="card" id="doctorReferenceTableSection">
+      <div class="sheet-header">
+        <div>
+          <h2>Doctor Referral Summary</h2>
+          <p class="doctor-reference-help">
+            <span class="doctor-reference-help-copy">Monthly report data is restricted to Admin Access. You can edit doctor names and percentages after signing in.</span>
+            <span class="doctor-reference-report-actions">
+              <button id="doctorReferenceAdminBtn" type="button" class="btn-secondary doctor-reference-admin-btn">Admin Access to View &amp; Edit</button>
+              <button id="doctorReferenceOverallPrintBtn" type="button" class="btn-primary doctor-reference-overall-print-btn">Print Overall Report</button>
+            </span>
+          </p>
+        </div>
+      </div>
+      <div id="doctorReferenceLockedState" class="doctor-reference-locked-state" role="status">
+        <strong>Monthly report data is hidden.</strong>
+        <span>Enter the admin password to view the report and edit percentages.</span>
+      </div>
+      <div id="doctorReferenceTableWrap" class="bill-list-table-wrap doctor-reference-table-wrap" hidden>
+        <table class="doctor-reference-table" id="doctorReferenceTable">
+          <thead>
+            <tr>
+              <th>Doctor Name</th>
+              <th>Total References</th>
+              <th>Total Amount Generated</th>
+              <th>Percentage</th>
+              <th>Consultation Fee</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="doctorReferenceBody"></tbody>
+        </table>
+      </div>
+    </section>
+    </div><!-- /doctorReferencePage -->
+
+    <!-- RADIOLOGIST DETAILS PAGE -->
+    <div class="page-content" id="radiologistsPage" style="display:none;">
+    <section class="card" id="radiologistSelectionSection">
+      <h2>Radiologist Details</h2>
+      <div class="doctor-filter-row">
+        <div class="form-group">
+          <label for="radSelectInput">Select Radiologist</label>
+          <select id="radSelectInput">
+            <option value="" selected disabled>Select a radiologist</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="radDoctorSelectInput">Referring Doctor</label>
+          <select id="radDoctorSelectInput">
+            <option value="__ALL__" selected>All Doctors</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="radFromDate">From Date</label>
+          <input id="radFromDate" type="date" />
+        </div>
+        <div class="form-group">
+          <label for="radToDate">To Date</label>
+          <input id="radToDate" type="date" />
+        </div>
+      </div>
+      <p id="radStatusMsg" class="status-msg" aria-live="polite"></p>
+    </section>
+
+    <section class="card" id="radSummaryRow" style="display:none; padding: 0; overflow:visible;">
+      <div style="overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:10px;">
+      <table class="doc-summary-table">
+        <thead>
+          <tr>
+            <th>Patients</th>
+            <th>Scan Fees Collected</th>
+            <th>Radiologist Fees (Paid Out)</th>
+            <th>Grand Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td id="radStatPatients">0</td>
+            <td id="radStatScanFees">₹0</td>
+            <td id="radStatRadFees">₹0</td>
+            <td id="radStatTotal" class="stat-total-cell">₹0</td>
+          </tr>
+        </tbody>
+      </table>
+      </div>
+    </section>
+
+    <section class="card" id="radPatientsSection" style="display:none;">
+      <h2 id="radPatientsTitle">Patient Records</h2>
+      <div class="bill-list-table-wrap">
+        <table class="doctor-records-table" id="radPatientsTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Date</th>
+              <th>Patient Name</th>
+              <th>Age</th>
+              <th>Scan Type</th>
+              <th>2D Scan</th>
+              <th>Referring Doctor</th>
+              <th>Scan Fees</th>
+              <th>Radiologist Fees</th>
+              <th>Total Fees</th>
+            </tr>
+          </thead>
+          <tbody id="radPatientsBody"></tbody>
+        </table>
+      </div>
+    </section>
+    </div><!-- /radiologistsPage -->
+
+    <!-- BILL GENERATION PAGE -->
+    <div class="page-content" id="billPage" style="display:none;">
+    <section class="card" id="billGenerationSection">
+      <h2>Generate Bill</h2>
+      <div class="bill-date-row">
+        <div class="form-group" style="max-width:260px;">
+          <label for="billDate">Select Date</label>
+          <input id="billDate" type="date" required />
+        </div>
+        <p id="billStatusMsg" class="status-msg" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <section class="card" id="billListSection" style="display:none;">
+      <h2 id="billListTitle">Patients on <span id="billListDate"></span></h2>
+      <div class="bill-list-table-wrap">
+        <table class="bill-list-table">
+          <colgroup>
+            <col class="col-num">
+            <col class="col-name">
+            <col class="col-age">
+            <col class="col-scan">
+            <col class="col-2d">
+            <col class="col-ref">
+            <col class="col-scanfee">
+            <col class="col-total">
+            <col class="col-print">
+          </colgroup>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Patient Name</th>
+              <th>Age</th>
+              <th>Scan Type</th>
+              <th>2D Scan</th>
+              <th>Referring Doctor</th>
+              <th class="r">Scan Fees</th>
+              <th class="r">Total Fees</th>
+              <th class="c">Print</th>
+            </tr>
+          </thead>
+          <tbody id="billListBody"></tbody>
+        </table>
+      </div>
+    </section>
+    </div><!-- /billPage -->
+
+    <!-- PATIENT RECORDS (Scan Page) -->
+    <div id="scanPageRecords" class="page-content" style="display:block;">
+    <section class="card" aria-labelledby="sheetTitle" id="sheetSection">
+      <div class="records-card-header">
+        <div class="records-card-title-row">
+          <h2 id="sheetTitle">Patient Records</h2>
+          <div class="sync-health" aria-live="polite" aria-atomic="true">
+            <span id="syncStatus" class="sync-status" aria-hidden="true"></span>
+            <span id="syncStatusDetail" class="sync-status-detail">Offline cache</span>
+          </div>
+        </div>
+        <div class="records-card-controls">
+          <span id="recordsPageInfo" class="records-page-info"></span>
+          <div class="records-month-filter-group">
+            <label for="recordsMonthFilter" class="records-month-label">Month</label>
+            <select id="recordsMonthFilter" class="records-month-select" aria-label="Filter records by month">
+              <option value="">All Months</option>
+            </select>
+          </div>
+          <button id="refreshBtn" class="btn-secondary" aria-label="Refresh cloud data now">&#x21BB; Refresh now</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Age</th>
+              <th>Patient Name</th>
+              <th>Phone</th>
+              <th>Scan Type</th>
+              <th>2D Scan</th>
+              <th>Purpose of CBCT</th>
+              <th>Scan Fees</th>
+              <th>Radiologist Name</th>
+              <th>Radiologist Fees</th>
+              <th>Referring Doctor</th>
+              <th>Consultation Fees</th>
+              <th>Total Fees</th>
+              <th>Payment Method</th>
+              <th>Sync</th>
+              <th class="no-print">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+      <!-- Pagination -->
+      <div class="pagination-row" id="paginationRow" style="display:none;">
+        <button class="page-nav-btn" id="prevPageBtn">&#8592; Prev</button>
+        <span id="pageNumDisplay" class="page-num-display"></span>
+        <button class="page-nav-btn" id="nextPageBtn">Next &#8594;</button>
+      </div>
+    </section>
+    </div><!-- /scanPageRecords -->
+  </main>
+
+  <div id="adminModal" class="admin-modal" style="display:none;" aria-hidden="true">
+    <div class="admin-modal-card">
+      <h3 id="adminModalTitle">Admin Access</h3>
+      <p id="adminModalHint" class="user-info"></p>
+
+      <div id="adminLoginView">
+        <label for="adminPasswordInput">Password</label>
+        <input id="adminPasswordInput" type="password" class="admin-modal-input" />
+        <div class="actions">
+          <button type="button" id="adminLoginSubmitBtn" class="btn-primary">Login</button>
+          <button type="button" id="adminModalCloseBtn" class="btn-secondary">Cancel</button>
+        </div>
+      </div>
+
+      <p id="adminModalMsg" class="status-msg" aria-live="polite"></p>
+    </div>
+  </div>
+
+  <!-- DOCTOR MANAGEMENT MODAL (Triggered from end of doctor dropdown list) -->
+  <div id="doctorManageModal" class="admin-modal" style="display:none;" aria-hidden="true">
+    <div class="admin-modal-card doc-manage-modal-card">
+      <div class="doc-manage-header">
+        <h3>Manage Referring Doctors</h3>
+        <button type="button" id="docManageCloseBtn" class="doc-manage-close" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="doc-manage-add-row">
+        <input id="newDoctorNameInput" type="text" placeholder="Enter doctor name (e.g. Dr. John Doe)" class="admin-modal-input" style="margin:0;" />
+        <button type="button" id="addNewDoctorBtn" class="btn-primary" style="white-space:nowrap;">+ Add Doctor</button>
+      </div>
+
+      <div class="doc-manage-search-row">
+        <input id="filterDocManageInput" type="text" placeholder="Search doctors list..." class="admin-modal-input" style="margin-top:10px;margin-bottom:8px;" />
+      </div>
+
+      <div class="doc-manage-list-wrap">
+        <div id="docManageListBody" class="doc-manage-list"></div>
+      </div>
+
+      <p id="docManageMsg" class="status-msg" aria-live="polite"></p>
+
+      <div class="actions" style="margin-top:12px;">
+        <button type="button" id="docManageDoneBtn" class="btn-secondary">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin-auth.js?v=16"></script>
+  <script src="admin-config-editor.js?v=16"></script>
+  <script src="doctor-reference.js?v=13"></script>
+  <script src="payment-method.js?v=1"></script>
+  <script src="cloud-sync.js?v=1"></script>
+  <script src="demo-backend.js?v=1"></script>
+  <script src="sync-recovery.js?v=1"></script>
+  <script src="records-paging.js?v=2"></script>
+  <dialog id="appPromptDialog" class="app-prompt-dialog" aria-labelledby="appPromptTitle" aria-describedby="appPromptMessage">
+    <form method="dialog" class="app-dialog-form">
+      <h2 id="appPromptTitle" class="app-dialog-title"></h2>
+      <p id="appPromptMessage" class="app-dialog-message"></p>
+      <input id="appPromptInput" class="app-dialog-input" type="text" autocomplete="off" hidden />
+      <div class="app-dialog-actions">
+        <button type="submit" value="cancel" id="appPromptCancel" class="app-dialog-cancel">Cancel</button>
+        <button type="submit" value="confirm" id="appPromptConfirm" class="app-dialog-confirm">Confirm</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app-dialog.js?v=1"></script>
+  <script src="patient.js?v=31"></script>
+  <script src="expenses.js?v=15"></script>
+</body>
+</html>

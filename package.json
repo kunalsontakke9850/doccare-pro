@@ -1,0 +1,26 @@
+{
+  "name": "doccare-pro",
+  "version": "2.6.2",
+  "private": true,
+  "scripts": {
+    "start": "node scripts/start-safe-static.js production",
+    "start:test": "node scripts/start-safe-static.js test",
+    "start:production": "node scripts/start-safe-static.js production",
+    "test": "node scripts/run-safe-tests.js all",
+    "test:unit": "node scripts/run-safe-tests.js all",
+    "test:stage-b": "node scripts/run-safe-tests.js stage-b",
+    "test:stage-c": "node scripts/run-safe-tests.js stage-c",
+    "test:integration": "node scripts/run-safe-tests.js stage-b",
+    "test:security": "node scripts/run-safe-tests.js stage-c",
+    "build:demo": "node scripts/build-demo.js",
+    "check:release": "npm run build:demo && node scripts/check-public-release.js",
+    "start:demo": "node scripts/start-demo.js",
+    "test:demo": "node --test tests/demo-backend.test.js tests/demo-runtime.test.js tests/clinic-defaults.test.js"
+  },
+  "description": "Minimal package.json to run a local static server for DocCare Pro",
+  "author": "",
+  "devDependencies": {
+    "http-server": "^14.1.1",
+    "live-server": "^1.2.2"
+  }
+}

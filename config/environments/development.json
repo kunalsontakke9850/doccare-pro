@@ -1,0 +1,6 @@
+{
+  "environment": "development",
+  "endpoint": "http://127.0.0.1:3050/api",
+  "transport": "local-gateway",
+  "notes": "Loopback gateway renderer endpoint. Upstream URL and signing secret are supplied only through gateway environment variables."
+}
