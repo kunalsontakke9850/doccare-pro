@@ -2,6 +2,11 @@
 
 DocCare Pro is a browser app for scan entry, fee tracking, expenses, doctor summaries, and printable bills. The interface uses plain HTML, CSS, and JavaScript. The original installation stores shared records in Google Sheets through an Apps Script web app.
 
+## Project links
+
+- Repository: [github.com/kunalsontakke9850/doccare-pro](https://github.com/kunalsontakke9850/doccare-pro)
+- Live demo: [kunalsontakke9850.github.io/doccare-pro](https://kunalsontakke9850.github.io/doccare-pro/)
+
 ## Demo
 
 The GitHub Pages build runs with sample records and saves edits in the current browser. It does not send records to a server. Use names beginning with `Sample` or `Demo` when adding a row. Clear this site's browser storage to restore the starter data.
